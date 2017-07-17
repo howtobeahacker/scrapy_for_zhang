@@ -39,12 +39,11 @@ from selenium import webdriver
 
 
 def get_second_page_url(type,page):
-    original_url="http://desk.zol.com.cn/"
-    kind_url=original_url+type+"/"+str(page)+".html"   
+    original_url="http://sj.zol.com.cn/bizhi/"
+    kind_url=original_url+type+"/"+str(page)+".html"
 
-    re_1 = '''\<li class="photo-list-padding"\>(.*)\<div'''#先筛选出属于这个type的相册
-    re_2 = '''[0-9]{3,4}[_][0-9]{3,5}[_][0-9]{1}[.]html'''#再筛选出这个相册的id
-    print(kind_url)
+    re_1 = '''a class="pic" href="(\/bizhi\/detail[_][0-9]{3,4}[_][0-9]{3,5}[.]html)" target="_blank"'''
+    # print(kind_url)
     r = requests.get(kind_url)
     r.encoding = r.apparent_encoding
     
@@ -54,9 +53,8 @@ def get_second_page_url(type,page):
     second_page_url=[]
     
     for i in HTML:
-        url = re.findall(re_2, i)
-        for i in url:
-            second_page_url.append("http://desk.zol.com.cn/bizhi/"+i)
+            second_page_url.append("http://sj.zol.com.cn"+i)
+    second_page_url=second_page_url[:-3]
 
     return second_page_url
 
@@ -65,14 +63,14 @@ def get_second_page_url(type,page):
 def get_second_img_id(url):#这个url是第二层页面的url
     list=[]
     r = requests.get(url)
-    all_ip=re.findall('''\<li class=\"show\d\"\>\s*\<a href=\"(.*)\"\>''',r.text)
+    all_ip = re.findall('''\<li id="img[0-9]{1,2}" class=\"show\d "\>\s*\<a href=\"(.*)\"\>''', r.text)
     for i in all_ip:
-        list.append(i.split("_")[1])
+        list.append(i.split("_")[2].split(".")[0])
     return list
 #得到每张图片的id，在第二层页面的
 def get_num(url):#这个url是第二层页面的url
     r = requests.get(url)
-    all_num = re.findall('''href=\"\/showpic\/1920x1080(.*?)\"''', r.text)
+    all_num = re.findall('''href=\"\/bizhi\/showpic\/480x800(.*?)\"''', r.text)
     num= all_num[0].split("_")[-1]
     return num
 #因为每张图片后面加了一个随机数字，找出这个随机数字，最后生成html网址
@@ -85,7 +83,7 @@ def get_third_url(url):#这个url是第二层页面的url
     page_url=get_second_img_id(url)
     num=get_num(url)
     for i in  page_url:
-        list.append("http://desk.zol.com.cn/showpic/1920x1080_"+str(i)+"_"+str(num))
+        list.append("http://sj.zol.com.cn/bizhi/showpic/480x800_"+str(i)+"_"+str(num))#http://sj.zol.com.cn/bizhi/showpic/480x800_72700_82.html
     return list
 
 def get_third_img(url):#这个url是第三层的htmlulr
@@ -96,8 +94,7 @@ def get_third_img(url):#这个url是第三层的htmlulr
 def download(file_name,r):
     
     
-    q= requests.get(r,proxies={'https': '116.28.116.84:808'})
-    q.encoding=q.apparent_encoding
+    q= requests.get(r)
     f=open(file_name,"wb")
     f.write(q.content)
     f.close
@@ -105,33 +102,37 @@ def download(file_name,r):
 
 
 if __name__ == "__main__":
-    
 
-    second_url=[]
-    for i in range(1,2):
-        for i in get_second_page_url("mingxing/p4",i):
-            second_url.append(i)
-            print(i)
-   
-    
-    
-    third_url=[]
-    for i in second_url:
-        try:
-            for i in get_third_url(i):
-                third_url.append(i)
-                print(i)            
-        except Exception:
-            pass
+    # second_url = []
+    # for i in range(1, 31):
+    #     for i in get_second_page_url("meinv", i):
+    #         second_url.append(i)
+    #         # print(i)
+    #
+    # third_url = []
+    # for i in second_url:
+    #     try:
+    #         for i in get_third_url(i):
+    #             third_url.append(i)
+    #             # print(i)
+    #     except Exception:
+    #         pass
 
 
+    f = open("D:\python_codes\\try\img_url.txt", "r")
     third_img=[]
-    for i in third_url:
-        third_img.append(get_third_img(i))
+    for eachline in f:
+        third_img.append(eachline)
 
-    num=1
+    # third_img = []
+    # for i in third_url:
+    #     try:
+    #         print(get_third_img(i))
+    #     except Exception:
+    #         pass
+
+    num = 1
     for i in third_img:
-        download("D:\python_codes\\try\img\\"+str(num)+".jpg",i)
-        print("===================="+str(num)+"*************"+"success"+"=================")
-        num+=1
-
+        download("D:\python_codes\\try\img2\\" + str(num) + ".jpg", i)
+        print("====================" + str(num) + "*************" + "success" + "=================")
+        num += 1
